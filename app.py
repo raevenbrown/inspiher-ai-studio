@@ -193,7 +193,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-st.markdown('<span class="status-badge">🟢 LIVE HIGH-SPEED ENGINE ACTIVE</span>', unsafe_allow_html=True)
+st.markdown('<span class="status-badge">🟢 HIGH-SPEED AI ENGINE ACTIVE</span>', unsafe_allow_html=True)
 
 # 5. Groq Setup
 raw_key = st.secrets.get("GROQ_API_KEY", os.environ.get("GROQ_API_KEY", ""))
@@ -247,7 +247,7 @@ if generate_btn:
     if client:
         try:
             stream = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
+                model="llama-3.1-8b-instant",
                 messages=[
                     {"role": "system", "content": STUDIO_SYSTEM_INSTRUCTION},
                     {"role": "user", "content": f"Advisory Lens: {selected_persona}\nGoal: {query}"}
@@ -266,4 +266,4 @@ if generate_btn:
         except Exception as e:
             st.error(f"Engine Error: {e}")
     else:
-        st.warning("Please add GROQ_API_KEY under Streamlit Settings > Secrets.")
+        st.warning("Please add `GROQ_API_KEY` under Streamlit Settings > Secrets.")
