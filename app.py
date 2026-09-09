@@ -16,13 +16,18 @@ st.markdown("""
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
-    /* Main Background & Grid Overlay */
+    /* Hide Streamlit default header decorations & stray anchor badges */
+    #MainMenu, footer, header {visibility: hidden;}
+    .stAppDeployButton {display: none;}
+    a.anchorjs-link, [data-testid="stHeaderActionElements"] {display: none !important;}
+    
+    /* Global Canvas Background & Architectural Grid */
     .stApp {
         background-color: #1A120B !important;
         background-image: 
-            linear-gradient(to right, rgba(197, 155, 88, 0.07) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(197, 155, 88, 0.07) 1px, transparent 1px) !important;
-        background-size: 45px 45px !important;
+            linear-gradient(to right, rgba(197, 155, 88, 0.08) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(197, 155, 88, 0.08) 1px, transparent 1px) !important;
+        background-size: 44px 44px !important;
         color: #EADBC8 !important;
         font-family: 'Plus Jakarta Sans', sans-serif !important;
     }
@@ -32,21 +37,31 @@ st.markdown("""
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 18px 0px 28px 0px;
-        border-bottom: 1px solid rgba(197, 155, 88, 0.15);
+        padding: 10px 0px 24px 0px;
+        border-bottom: 1px solid rgba(197, 155, 88, 0.18);
         margin-bottom: 30px;
     }
+
+    /* Logo - Removes blue hyperlink & underline completely */
     .brand-logo {
-        font-family: 'Fraunces', serif;
-        font-size: 22px;
-        font-weight: 700;
-        color: #F8F4E9;
-        text-decoration: none;
-        letter-spacing: -0.3px;
+        font-family: 'Fraunces', serif !important;
+        font-size: 24px !important;
+        font-weight: 700 !important;
+        color: #FAF5E9 !important;
+        text-decoration: none !important;
+        letter-spacing: -0.3px !important;
+        display: inline-flex !important;
+        align-items: baseline !important;
+        gap: 6px !important;
     }
-    .brand-logo span {
-        color: #C59B58;
+    .brand-logo:hover, .brand-logo:visited, .brand-logo:active {
+        color: #FAF5E9 !important;
+        text-decoration: none !important;
     }
+    .brand-logo .accent-gold {
+        color: #C59B58 !important;
+    }
+
     .nav-links {
         display: flex;
         gap: 24px;
@@ -55,15 +70,16 @@ st.markdown("""
         font-weight: 500;
         color: #D4C3B3;
     }
+    
     .nav-audit-btn {
-        background: #C59B58;
+        background: #C59B58 !important;
         color: #1A120B !important;
-        font-weight: 700;
-        font-size: 13px;
-        padding: 8px 18px;
-        border-radius: 6px;
-        text-decoration: none;
-        transition: all 0.2s;
+        font-weight: 700 !important;
+        font-size: 13px !important;
+        padding: 9px 18px !important;
+        border-radius: 6px !important;
+        text-decoration: none !important;
+        box-shadow: 0 4px 12px rgba(197, 155, 88, 0.25) !important;
     }
 
     /* Subtitle Tag */
@@ -73,13 +89,13 @@ st.markdown("""
         font-weight: 700;
         letter-spacing: 2px;
         text-transform: uppercase;
-        margin-bottom: 14px;
+        margin-bottom: 12px;
     }
 
     /* Headline Editorial Serif */
     .hero-title {
         font-family: 'Fraunces', serif;
-        font-size: 48px;
+        font-size: 46px;
         font-weight: 700;
         line-height: 1.15;
         color: #FAF5E9;
@@ -95,23 +111,13 @@ st.markdown("""
 
     .hero-sub {
         font-size: 15px;
-        line-height: 1.6;
+        line-height: 1.65;
         color: #C4B5A5;
         max-width: 680px;
-        margin-bottom: 30px;
+        margin-bottom: 32px;
     }
 
-    /* Studio Card Wrapper */
-    .studio-panel {
-        background: rgba(34, 24, 18, 0.85);
-        border: 1px solid rgba(197, 155, 88, 0.25);
-        border-radius: 12px;
-        padding: 24px;
-        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
-        margin-bottom: 25px;
-    }
-
-    /* Form Fields */
+    /* Form Fields Styling */
     label {
         color: #FAF5E9 !important;
         font-size: 13px !important;
@@ -157,11 +163,11 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 3. Top Navigation Header
+# 3. Top Navigation Header (Pure Cream + Gold, Zero Blue Links)
 st.markdown("""
 <div class="studio-nav">
     <a href="https://raevenbrown.github.io/thebrowngirlsstudio/index.html#education" class="brand-logo" target="_blank">
-        the brown girls <span>creative studio</span>
+        <span>the brown girls</span><span class="accent-gold">creative studio</span>
     </a>
     <div class="nav-links">
         <span>Studio Services</span>
