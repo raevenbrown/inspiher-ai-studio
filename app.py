@@ -246,12 +246,25 @@ if generate_btn:
 
     if client:
         try:
-            # Auto-detect the best active text model on your account
-            all_models = [m.id for m in client.models.list().data if "whisper" not in m.id and "embed" not in m.id]
-            selected_model = next((m for m in all_models if "llama" in m.lower()), all_models[0])
+            # Verified production streaming models on Groq
+            candidate_models = [
+                "llama-3.1-8b-instant",
+                "llama3-8b-8192",
+                "llama-3.3-70b-versatile",
+                "mixtral-8x7b-32768"
+            ]
+            
+            # Fetch active models and ignore all guard / moderation / whisper models
+            active_ids = {
+                m.id for m in client.models.list().data 
+                if not any(x in m.id.lower() for x in ["guard", "whisper", "embed", "safeguard", "distil"])
+            }
+            
+            # Pick the first matching chat model, or fallback to llama-3.1-8b-instant
+            target_model = next((m for m in candidate_models if m in active_ids), "llama-3.1-8b-instant")
 
             stream = client.chat.completions.create(
-                model=selected_model,
+                model=target_model,
                 messages=[
                     {"role": "system", "content": STUDIO_SYSTEM_INSTRUCTION},
                     {"role": "user", "content": f"Advisory Lens: {selected_persona}\nGoal: {query}"}
@@ -270,4 +283,4 @@ if generate_btn:
         except Exception as e:
             st.error(f"Engine Error: {e}")
     else:
-        st.warning("Please add `GROQ_API_KEY` under Streamlit Settings > Secrets.")
+        st.warning("Please add GROQ_API_KEY under Streamlit Settings > Secrets.")
