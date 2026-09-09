@@ -214,24 +214,25 @@ else:
 
 STUDIO_SYSTEM_INSTRUCTION = (
     "You are the Principal Growth Architect for 'The Brown Girls Creative Studio'. "
-    "Give highly detailed, direct, motivating, and mathematically sound strategies. "
+    "Give detailed, motivating, and mathematically sound strategies. "
     "Always break down the exact revenue units, Phase 1 offer structure, Phase 2 pipeline systems, "
-    "Phase 3 closing tactics, and a bold non-negotiable executive standard."
+    "Phase 3 closing tactics, and a bold executive standard."
 )
 
 def query_gemini_api(key: str, user_prompt: str, persona: str) -> str:
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={key}" if key.startswith("AIzaSy") else "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
     
     payload = {
         "system_instruction": {"parts": [{"text": STUDIO_SYSTEM_INSTRUCTION}]},
-        "contents": [{"parts": [{"text": f"Advisory Lens: {persona}\nGoal: {user_prompt}"}]}],
+        "contents": [{"parts": [{"text": f"Advisory Lens: {persona}\nStrategic Goal: {user_prompt}"}]}],
         "generationConfig": {"temperature": 0.7}
     }
     
-    headers = {"Content-Type": "application/json"}
-    if key.startswith("AQ."):
-        headers["Authorization"] = f"Bearer {key}"
-        
+    headers = {
+        "Content-Type": "application/json",
+        "x-goog-api-key": key
+    }
+    
     req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST")
     
     with urllib.request.urlopen(req, timeout=30) as resp:
@@ -253,7 +254,7 @@ with col1:
     ]
     selected_persona = st.selectbox("Select Advisory Lens:", persona_options)
     placeholder_map = {
-        "Creative Entrepreneur": "How to get $7k in 3 month with a marketing business",
+        "Creative Entrepreneur": "How to get $7k in 3 months with a marketing business",
         "Content & Brand Strategy": "How do I create short-form hooks that convert viewers into paying clients?",
         "Operations & Automation": "How do I automate client onboarding without writing complex code?",
         "Brand Identity & Design": "How do I position my business as an executive, high-ticket brand?",
