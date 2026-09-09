@@ -1,8 +1,9 @@
+import json
 import os
 import time
+import urllib.request
+import urllib.error
 import streamlit as st
-from google import genai
-from google.genai import types
 
 # 1. Page Configuration
 st.set_page_config(
@@ -11,7 +12,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# 2. Studio Brand Styling matching raevenbrown.github.io/thebrowngirlsstudio
+# 2. Studio Brand Styling
 st.markdown("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -202,34 +203,40 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 5. Connect to Gemini API Client
+# 5. Handle Authentication
 raw_api_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
 api_key = str(raw_api_key).strip() if raw_api_key else ""
 
 if api_key:
-    st.markdown('<span class="status-badge status-live">🟢 LIVE INTERNET ENGINE ACTIVE (Gemini 2.0)</span>', unsafe_allow_html=True)
-    try:
-        client = genai.Client(api_key=api_key)
-    except Exception:
-        client = None
+    st.markdown('<span class="status-badge status-live">🟢 LIVE ENGINE ACTIVE</span>', unsafe_allow_html=True)
 else:
-    st.markdown('<span class="status-badge status-demo">🟡 SIMULATOR MODE (Add GEMINI_API_KEY in Streamlit Secrets)</span>', unsafe_allow_html=True)
-    client = None
+    st.markdown('<span class="status-badge status-demo">🟡 SIMULATOR MODE (Add GEMINI_API_KEY in Secrets)</span>', unsafe_allow_html=True)
 
-STUDIO_SYSTEM_INSTRUCTION = """
-You are the Principal Growth Architect and Executive Consultant for "The Brown Girls Creative Studio".
-Your voice is high-conviction, empowering, deeply practical, and laser-focused on real numbers and operational systems.
+STUDIO_SYSTEM_INSTRUCTION = (
+    "You are the Principal Growth Architect for 'The Brown Girls Creative Studio'. "
+    "Give highly detailed, direct, motivating, and mathematically sound strategies. "
+    "Always break down the exact revenue units, Phase 1 offer structure, Phase 2 pipeline systems, "
+    "Phase 3 closing tactics, and a bold non-negotiable executive standard."
+)
 
-When answering business inquiries:
-1. Provide tangible monetization math (e.g., break goals down into units, weekly targets, pricing tiers, and client capacity).
-2. Avoid generic motivational filler. Give exact execution steps: the offer structure, target market, outreach hooks, and systems required.
-3. Structure your response into clean, motivating sections:
-   - 🎯 The Revenue Math & Target Blueprint
-   - ⚡ Phase 1: High-Conversion Offer Setup (Days 1–30)
-   - 📈 Phase 2: Pipeline & Systems Engine (Days 31–60)
-   - 💼 Phase 3: High-Ticket Close & Retainer Scaling (Days 61–90)
-   - 🤎 Executive Standard (1 actionable rule of thumb)
-"""
+def query_gemini_api(key: str, user_prompt: str, persona: str) -> str:
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={key}" if key.startswith("AIzaSy") else "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+    
+    payload = {
+        "system_instruction": {"parts": [{"text": STUDIO_SYSTEM_INSTRUCTION}]},
+        "contents": [{"parts": [{"text": f"Advisory Lens: {persona}\nGoal: {user_prompt}"}]}],
+        "generationConfig": {"temperature": 0.7}
+    }
+    
+    headers = {"Content-Type": "application/json"}
+    if key.startswith("AQ."):
+        headers["Authorization"] = f"Bearer {key}"
+        
+    req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST")
+    
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        result = json.loads(resp.read().decode("utf-8"))
+        return result["candidates"][0]["content"]["parts"][0]["text"]
 
 # 6. Interactive Studio AI Assistant Panel
 st.markdown('<div class="section-eyebrow">— INTERACTIVE AI STRATEGY ENGINE</div>', unsafe_allow_html=True)
@@ -245,9 +252,8 @@ with col1:
         "Client Acquisition"
     ]
     selected_persona = st.selectbox("Select Advisory Lens:", persona_options)
-
     placeholder_map = {
-        "Creative Entrepreneur": "How do I package my services to hit $7k in 3 months?",
+        "Creative Entrepreneur": "How to get $7k in 3 month with a marketing business",
         "Content & Brand Strategy": "How do I create short-form hooks that convert viewers into paying clients?",
         "Operations & Automation": "How do I automate client onboarding without writing complex code?",
         "Brand Identity & Design": "How do I position my business as an executive, high-ticket brand?",
@@ -266,34 +272,21 @@ if generate_btn:
         st.markdown(f"### Strategic Output: *{selected_persona}*")
         message_placeholder = st.empty()
 
-        if client:
+        if api_key:
             try:
-                prompt = (
-                    f"Advisory Lens: {selected_persona}\n"
-                    f"Client Strategic Goal: {user_input.strip()}\n\n"
-                    "Provide a comprehensive, numerical, and actionable executive blueprint."
-                )
+                with st.spinner("Generating Strategic Blueprint..."):
+                    answer = query_gemini_api(api_key, user_input.strip(), selected_persona)
+                
+                full_text = ""
+                for line in answer.split("\n"):
+                    full_text += line + "\n"
+                    message_placeholder.markdown(full_text + "▌")
+                    time.sleep(0.012)
+                message_placeholder.markdown(answer)
 
-                response = client.models.generate_content(
-                    model="gemini-2.0-flash",
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        system_instruction=STUDIO_SYSTEM_INSTRUCTION,
-                        temperature=0.7,
-                    )
-                )
-
-                if response.text:
-                    full_text = ""
-                    for line in response.text.split("\n"):
-                        full_text += line + "\n"
-                        message_placeholder.markdown(full_text + "▌")
-                        time.sleep(0.015)
-                    message_placeholder.markdown(response.text)
-                else:
-                    st.error("No content generated. Please try again.")
-
+            except urllib.error.HTTPError as err:
+                st.error(f"API Error ({err.code}): {err.read().decode('utf-8')}")
             except Exception as e:
-                st.error(f"API Error: {e}")
+                st.error(f"Error: {e}")
         else:
             st.warning("Please verify your `GEMINI_API_KEY` is added under Streamlit Settings > Secrets.")
