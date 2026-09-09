@@ -1,9 +1,6 @@
-import json
 import os
-import time
-import urllib.request
-import urllib.error
 import streamlit as st
+from groq import Groq
 
 # 1. Page Configuration
 st.set_page_config(
@@ -163,21 +160,14 @@ st.markdown("""
         border-radius: 12px;
         margin-bottom: 14px;
         font-weight: 600;
-    }
-    .status-live {
         background: rgba(16, 185, 129, 0.2);
         color: #10B981;
         border: 1px solid rgba(16, 185, 129, 0.4);
     }
-    .status-demo {
-        background: rgba(245, 158, 11, 0.2);
-        color: #F59E0B;
-        border: 1px solid rgba(245, 158, 11, 0.4);
-    }
 </style>
 """, unsafe_allow_html=True)
 
-# 3. Top Studio Navigation Bar
+# 3. Navigation Bar
 st.markdown("""
 <div class="studio-nav">
     <a href="https://raevenbrown.github.io/thebrowngirlsstudio/index.html#education" class="brand-logo" target="_blank">
@@ -203,41 +193,24 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 5. Handle Authentication
-raw_api_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
-api_key = str(raw_api_key).strip() if raw_api_key else ""
+st.markdown('<span class="status-badge">🟢 LIVE HIGH-SPEED ENGINE ACTIVE</span>', unsafe_allow_html=True)
 
-if api_key:
-    st.markdown('<span class="status-badge status-live">🟢 LIVE ENGINE ACTIVE</span>', unsafe_allow_html=True)
-else:
-    st.markdown('<span class="status-badge status-demo">🟡 SIMULATOR MODE (Add GEMINI_API_KEY in Secrets)</span>', unsafe_allow_html=True)
+# 5. Groq Setup
+raw_key = st.secrets.get("GROQ_API_KEY", os.environ.get("GROQ_API_KEY", ""))
+groq_key = str(raw_key).strip() if raw_key else ""
+client = Groq(api_key=groq_key) if groq_key else None
 
-STUDIO_SYSTEM_INSTRUCTION = (
-    "You are the Principal Growth Architect for 'The Brown Girls Creative Studio'. "
-    "Give detailed, motivating, and mathematically sound strategies. "
-    "Always break down the exact revenue units, Phase 1 offer structure, Phase 2 pipeline systems, "
-    "Phase 3 closing tactics, and a bold executive standard."
-)
+STUDIO_SYSTEM_INSTRUCTION = """
+You are the Principal Growth Architect for "The Brown Girls Creative Studio".
+Deliver clear, highly tactical, revenue-grounded, and actionable strategic blueprints.
 
-def query_gemini_api(key: str, user_prompt: str, persona: str) -> str:
-    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
-    
-    payload = {
-        "system_instruction": {"parts": [{"text": STUDIO_SYSTEM_INSTRUCTION}]},
-        "contents": [{"parts": [{"text": f"Advisory Lens: {persona}\nStrategic Goal: {user_prompt}"}]}],
-        "generationConfig": {"temperature": 0.7}
-    }
-    
-    headers = {
-        "Content-Type": "application/json",
-        "x-goog-api-key": key
-    }
-    
-    req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST")
-    
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        result = json.loads(resp.read().decode("utf-8"))
-        return result["candidates"][0]["content"]["parts"][0]["text"]
+Structure every strategy into:
+1. 🎯 The Revenue Math & Target Blueprint (Breakdown of prices, package units, and monthly trajectory)
+2. ⚡ Phase 1: High-Conversion Offer Setup (Days 1–30)
+3. 📈 Phase 2: Pipeline & Systems Engine (Days 31–60)
+4. 💼 Phase 3: High-Ticket Close & Retainer Scaling (Days 61–90)
+5. 🤎 Executive Standard (1 non-negotiable operational standard)
+"""
 
 # 6. Interactive Studio AI Assistant Panel
 st.markdown('<div class="section-eyebrow">— INTERACTIVE AI STRATEGY ENGINE</div>', unsafe_allow_html=True)
@@ -265,29 +238,32 @@ with col2:
     user_input = st.text_input("Ask a Growth or Systems Question:", placeholder=placeholder_map[selected_persona])
     generate_btn = st.button("Generate Strategic Blueprint ✨")
 
-# 7. Response Generation
+# 7. Streaming Response Generation
 if generate_btn:
-    if not user_input.strip():
-        st.warning("⚠️ Please enter a strategic question or goal above.")
+    query = user_input.strip() if user_input.strip() else placeholder_map[selected_persona]
+    st.markdown(f"### Strategic Output: *{selected_persona}*")
+    message_placeholder = st.empty()
+
+    if client:
+        try:
+            stream = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[
+                    {"role": "system", "content": STUDIO_SYSTEM_INSTRUCTION},
+                    {"role": "user", "content": f"Advisory Lens: {selected_persona}\nGoal: {query}"}
+                ],
+                temperature=0.7,
+                stream=True
+            )
+            
+            full_response = ""
+            for chunk in stream:
+                content = chunk.choices[0].delta.content or ""
+                full_response += content
+                message_placeholder.markdown(full_response + "▌")
+            message_placeholder.markdown(full_response)
+
+        except Exception as e:
+            st.error(f"Engine Error: {e}")
     else:
-        st.markdown(f"### Strategic Output: *{selected_persona}*")
-        message_placeholder = st.empty()
-
-        if api_key:
-            try:
-                with st.spinner("Generating Strategic Blueprint..."):
-                    answer = query_gemini_api(api_key, user_input.strip(), selected_persona)
-                
-                full_text = ""
-                for line in answer.split("\n"):
-                    full_text += line + "\n"
-                    message_placeholder.markdown(full_text + "▌")
-                    time.sleep(0.012)
-                message_placeholder.markdown(answer)
-
-            except urllib.error.HTTPError as err:
-                st.error(f"API Error ({err.code}): {err.read().decode('utf-8')}")
-            except Exception as e:
-                st.error(f"Error: {e}")
-        else:
-            st.warning("Please verify your `GEMINI_API_KEY` is added under Streamlit Settings > Secrets.")
+        st.warning("Please add GROQ_API_KEY under Streamlit Settings > Secrets.")
