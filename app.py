@@ -251,7 +251,7 @@ if generate_btn:
     if client:
         try:
             stream = client.chat.completions.create(
-                model="meta-llama/llama-3.3-70b-instruct:free",
+                model="google/gemini-2.0-flash-exp:free",
                 messages=[
                     {"role": "system", "content": STUDIO_SYSTEM_INSTRUCTION},
                     {"role": "user", "content": f"Advisory Lens: {selected_persona}\nGoal: {query}"}
