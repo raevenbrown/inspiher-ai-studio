@@ -1,4 +1,5 @@
 import os
+import time
 import streamlit as st
 from google import genai
 from google.genai import types
@@ -10,7 +11,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# 2. Complete Custom Brand Styling
+# 2. Studio Brand Styling matching raevenbrown.github.io/thebrowngirlsstudio
 st.markdown("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -157,9 +158,10 @@ st.markdown("""
     .status-badge {
         display: inline-block;
         font-size: 11px;
-        padding: 3px 8px;
+        padding: 4px 10px;
         border-radius: 12px;
-        margin-bottom: 12px;
+        margin-bottom: 14px;
+        font-weight: 600;
     }
     .status-live {
         background: rgba(16, 185, 129, 0.2);
@@ -174,7 +176,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 3. Top Navigation Header
+# 3. Top Studio Navigation Bar
 st.markdown("""
 <div class="studio-nav">
     <a href="https://raevenbrown.github.io/thebrowngirlsstudio/index.html#education" class="brand-logo" target="_blank">
@@ -200,30 +202,36 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 5. Connect to Live Gemini API
-api_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", None))
+# 5. Connect to Gemini API Client
+raw_api_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
+api_key = str(raw_api_key).strip() if raw_api_key else ""
 
 if api_key:
-    st.markdown('<span class="status-badge status-live">🟢 LIVE INTERNET ENGINE ACTIVE (Gemini 2.5)</span>', unsafe_allow_html=True)
-    client = genai.Client(api_key=api_key)
+    st.markdown('<span class="status-badge status-live">🟢 LIVE INTERNET ENGINE ACTIVE (Gemini 2.0)</span>', unsafe_allow_html=True)
+    try:
+        client = genai.Client(api_key=api_key)
+    except Exception:
+        client = None
 else:
-    st.markdown('<span class="status-badge status-demo">🟡 SIMULATOR MODE (Add GEMINI_API_KEY in Streamlit Secrets to enable live web queries)</span>', unsafe_allow_html=True)
+    st.markdown('<span class="status-badge status-demo">🟡 SIMULATOR MODE (Add GEMINI_API_KEY in Streamlit Secrets)</span>', unsafe_allow_html=True)
     client = None
 
-# System Persona Rules
 STUDIO_SYSTEM_INSTRUCTION = """
-You are the Executive Growth AI Consultant for "The Brown Girls Creative Studio".
-Your voice is empowering, strategic, authoritative, concise, and deeply practical.
-You specialize in helping women and minority business owners scale through data-driven systems, 
-high-ticket retainers ($10k/month roadmap), organic video hooks, and no-code workflow automations.
+You are the Principal Growth Architect and Executive Consultant for "The Brown Girls Creative Studio".
+Your voice is high-conviction, empowering, deeply practical, and laser-focused on real numbers and operational systems.
 
-Formatting standards:
-1. Always structure advice into 3 concrete, high-impact action steps with bold subheads.
-2. End with a 1-sentence strategic takeaway or revenue KPI to track.
-3. Be specific and tailored directly to the exact question asked—avoid generic motivational filler.
+When answering business inquiries:
+1. Provide tangible monetization math (e.g., break goals down into units, weekly targets, pricing tiers, and client capacity).
+2. Avoid generic motivational filler. Give exact execution steps: the offer structure, target market, outreach hooks, and systems required.
+3. Structure your response into clean, motivating sections:
+   - 🎯 The Revenue Math & Target Blueprint
+   - ⚡ Phase 1: High-Conversion Offer Setup (Days 1–30)
+   - 📈 Phase 2: Pipeline & Systems Engine (Days 31–60)
+   - 💼 Phase 3: High-Ticket Close & Retainer Scaling (Days 61–90)
+   - 🤎 Executive Standard (1 actionable rule of thumb)
 """
 
-# 6. Interactive Query Interface
+# 6. Interactive Studio AI Assistant Panel
 st.markdown('<div class="section-eyebrow">— INTERACTIVE AI STRATEGY ENGINE</div>', unsafe_allow_html=True)
 
 col1, col2 = st.columns([1, 2])
@@ -239,18 +247,18 @@ with col1:
     selected_persona = st.selectbox("Select Advisory Lens:", persona_options)
 
     placeholder_map = {
-        "Creative Entrepreneur": "How do I package my services to hit $10k/month?",
-        "Content & Brand Strategy": "How do I create videos that convert viewers into paying clients?",
-        "Operations & Automation": "How do I automate client onboarding without writing code?",
-        "Brand Identity & Design": "How do I position my business as a luxury, high-ticket brand?",
-        "Client Acquisition": "How do I pitch corporate clients and close bigger contracts?"
+        "Creative Entrepreneur": "How do I package my services to hit $7k in 3 months?",
+        "Content & Brand Strategy": "How do I create short-form hooks that convert viewers into paying clients?",
+        "Operations & Automation": "How do I automate client onboarding without writing complex code?",
+        "Brand Identity & Design": "How do I position my business as an executive, high-ticket brand?",
+        "Client Acquisition": "How do I pitch corporate clients and close bigger ongoing retainers?"
     }
 
 with col2:
     user_input = st.text_input("Ask a Growth or Systems Question:", placeholder=placeholder_map[selected_persona])
     generate_btn = st.button("Generate Strategic Blueprint ✨")
 
-# 7. Live Generation with Real-Time Streaming
+# 7. Response Generation
 if generate_btn:
     if not user_input.strip():
         st.warning("⚠️ Please enter a strategic question or goal above.")
@@ -260,10 +268,14 @@ if generate_btn:
 
         if client:
             try:
-                # Live Gemini API call with streaming responses
-                prompt = f"Advisory Lens: {selected_persona}\nClient Question: {user_input}"
-                response_stream = client.models.generate_content_stream(
-                    model="gemini-2.5-flash",
+                prompt = (
+                    f"Advisory Lens: {selected_persona}\n"
+                    f"Client Strategic Goal: {user_input.strip()}\n\n"
+                    "Provide a comprehensive, numerical, and actionable executive blueprint."
+                )
+
+                response = client.models.generate_content(
+                    model="gemini-2.0-flash",
                     contents=prompt,
                     config=types.GenerateContentConfig(
                         system_instruction=STUDIO_SYSTEM_INSTRUCTION,
@@ -271,23 +283,17 @@ if generate_btn:
                     )
                 )
 
-                full_response = ""
-                for chunk in response_stream:
-                    if chunk.text:
-                        full_response += chunk.text
-                        message_placeholder.markdown(full_response + "▌")
-                message_placeholder.markdown(full_response)
+                if response.text:
+                    full_text = ""
+                    for line in response.text.split("\n"):
+                        full_text += line + "\n"
+                        message_placeholder.markdown(full_text + "▌")
+                        time.sleep(0.015)
+                    message_placeholder.markdown(response.text)
+                else:
+                    st.error("No content generated. Please try again.")
 
             except Exception as e:
                 st.error(f"API Error: {e}")
         else:
-            # Fallback simulator if no API key is present
-            simulated = (
-                f"🤎 **[The Brown Girls Studio • {selected_persona}]**\n\n"
-                f"**Strategic Blueprint for \"{user_input}\":**\n\n"
-                "• **Step 1 (Core Bottleneck):** Identify whether your current bottleneck is lead volume, offer pricing, or onboarding friction.\n"
-                "• **Step 2 (Execution Sprint):** Create one turnkey asset (a standardized retainer proposal or an automated intake form) to solve this bottleneck.\n"
-                "• **Step 3 (Metric Validation):** Track conversion rates across 5 prospects before changing your core messaging.\n\n"
-                "*Add your GEMINI_API_KEY into Streamlit Secrets to enable infinite, unique real-time answers.*"
-            )
-            message_placeholder.markdown(simulated)
+            st.warning("Please verify your `GEMINI_API_KEY` is added under Streamlit Settings > Secrets.")
