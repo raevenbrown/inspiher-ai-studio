@@ -1,6 +1,6 @@
 import os
 import streamlit as st
-from groq import Groq
+from openai import OpenAI
 
 # 1. Page Configuration
 st.set_page_config(
@@ -167,7 +167,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 3. Navigation Bar
+# 3. Top Navigation Bar
 st.markdown("""
 <div class="studio-nav">
     <a href="https://raevenbrown.github.io/thebrowngirlsstudio/index.html#education" class="brand-logo" target="_blank">
@@ -193,12 +193,16 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-st.markdown('<span class="status-badge">🟢 HIGH-SPEED AI ENGINE ACTIVE</span>', unsafe_allow_html=True)
+st.markdown('<span class="status-badge">🟢 UNIVERSAL AI ENGINE ACTIVE</span>', unsafe_allow_html=True)
 
-# 5. Groq Setup
-raw_key = st.secrets.get("GROQ_API_KEY", os.environ.get("GROQ_API_KEY", ""))
-groq_key = str(raw_key).strip() if raw_key else ""
-client = Groq(api_key=groq_key) if groq_key else None
+# 5. OpenRouter Client Setup
+raw_key = st.secrets.get("OPENROUTER_API_KEY", os.environ.get("OPENROUTER_API_KEY", ""))
+api_key = str(raw_key).strip() if raw_key else ""
+
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=api_key,
+) if api_key else None
 
 STUDIO_SYSTEM_INSTRUCTION = """
 You are the Principal Growth Architect for "The Brown Girls Creative Studio".
@@ -246,25 +250,8 @@ if generate_btn:
 
     if client:
         try:
-            # Verified production streaming models on Groq
-            candidate_models = [
-                "llama-3.1-8b-instant",
-                "llama3-8b-8192",
-                "llama-3.3-70b-versatile",
-                "mixtral-8x7b-32768"
-            ]
-            
-            # Fetch active models and ignore all guard / moderation / whisper models
-            active_ids = {
-                m.id for m in client.models.list().data 
-                if not any(x in m.id.lower() for x in ["guard", "whisper", "embed", "safeguard", "distil"])
-            }
-            
-            # Pick the first matching chat model, or fallback to llama-3.1-8b-instant
-            target_model = next((m for m in candidate_models if m in active_ids), "llama-3.1-8b-instant")
-
             stream = client.chat.completions.create(
-                model=target_model,
+                model="meta-llama/llama-3.3-70b-instruct:free",
                 messages=[
                     {"role": "system", "content": STUDIO_SYSTEM_INSTRUCTION},
                     {"role": "user", "content": f"Advisory Lens: {selected_persona}\nGoal: {query}"}
@@ -283,4 +270,4 @@ if generate_btn:
         except Exception as e:
             st.error(f"Engine Error: {e}")
     else:
-        st.warning("Please add GROQ_API_KEY under Streamlit Settings > Secrets.")
+        st.warning("Please add `OPENROUTER_API_KEY` under Streamlit Settings > Secrets.")
