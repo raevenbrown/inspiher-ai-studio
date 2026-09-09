@@ -246,8 +246,12 @@ if generate_btn:
 
     if client:
         try:
+            # Auto-detect the best active text model on your account
+            all_models = [m.id for m in client.models.list().data if "whisper" not in m.id and "embed" not in m.id]
+            selected_model = next((m for m in all_models if "llama" in m.lower()), all_models[0])
+
             stream = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
+                model=selected_model,
                 messages=[
                     {"role": "system", "content": STUDIO_SYSTEM_INSTRUCTION},
                     {"role": "user", "content": f"Advisory Lens: {selected_persona}\nGoal: {query}"}
