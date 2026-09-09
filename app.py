@@ -1,6 +1,7 @@
-import time
-import re
+import os
 import streamlit as st
+from google import genai
+from google.genai import types
 
 # 1. Page Configuration
 st.set_page_config(
@@ -9,19 +10,17 @@ st.set_page_config(
     layout="wide"
 )
 
-# 2. Complete CSS Customization matching raevenbrown.github.io/thebrowngirlsstudio
+# 2. Complete Custom Brand Styling
 st.markdown("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
-    /* Hide Streamlit default header decorations & stray anchor badges */
     #MainMenu, footer, header {visibility: hidden;}
     .stAppDeployButton {display: none;}
     a.anchorjs-link, [data-testid="stHeaderActionElements"] {display: none !important;}
     
-    /* Global Canvas Background & Architectural Grid */
     .stApp {
         background-color: #1A120B !important;
         background-image: 
@@ -32,7 +31,6 @@ st.markdown("""
         font-family: 'Plus Jakarta Sans', sans-serif !important;
     }
 
-    /* Top Studio Header Navbar */
     .studio-nav {
         display: flex;
         justify-content: space-between;
@@ -42,7 +40,6 @@ st.markdown("""
         margin-bottom: 30px;
     }
 
-    /* Logo - Removes blue hyperlink & underline completely */
     .brand-logo {
         font-family: 'Fraunces', serif !important;
         font-size: 24px !important;
@@ -82,7 +79,6 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(197, 155, 88, 0.25) !important;
     }
 
-    /* Subtitle Tag */
     .section-eyebrow {
         color: #C59B58;
         font-size: 11px;
@@ -92,7 +88,6 @@ st.markdown("""
         margin-bottom: 12px;
     }
 
-    /* Headline Editorial Serif */
     .hero-title {
         font-family: 'Fraunces', serif;
         font-size: 46px;
@@ -117,7 +112,6 @@ st.markdown("""
         margin-bottom: 32px;
     }
 
-    /* Form Fields Styling */
     label {
         color: #FAF5E9 !important;
         font-size: 13px !important;
@@ -143,7 +137,6 @@ st.markdown("""
         box-shadow: 0 0 0 1px #C59B58 !important;
     }
 
-    /* Studio Mustard/Gold Primary Button */
     .stButton button {
         background-color: #C59B58 !important;
         color: #1A120B !important;
@@ -160,10 +153,28 @@ st.markdown("""
         background-color: #D6AA66 !important;
         transform: translateY(-1px);
     }
+    
+    .status-badge {
+        display: inline-block;
+        font-size: 11px;
+        padding: 3px 8px;
+        border-radius: 12px;
+        margin-bottom: 12px;
+    }
+    .status-live {
+        background: rgba(16, 185, 129, 0.2);
+        color: #10B981;
+        border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+    .status-demo {
+        background: rgba(245, 158, 11, 0.2);
+        color: #F59E0B;
+        border: 1px solid rgba(245, 158, 11, 0.4);
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# 3. Top Navigation Header (Pure Cream + Gold, Zero Blue Links)
+# 3. Top Navigation Header
 st.markdown("""
 <div class="studio-nav">
     <a href="https://raevenbrown.github.io/thebrowngirlsstudio/index.html#education" class="brand-logo" target="_blank">
@@ -189,75 +200,30 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 5. Rule-Based AI Knowledge Engine
-def search_knowledge_base(raw_prompt: str, persona: str) -> str:
-    p = raw_prompt.lower().strip()
-    clean = re.sub(r"[?!.]", "", raw_prompt).strip()
+# 5. Connect to Live Gemini API
+api_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", None))
 
-    subject = re.sub(r"[?!.]", "", p)
-    subject = re.sub(r"^(how (do|can|to|should) (i|we|you) |how (to|do|can) |what (is|are|does) |why (is|are|do|does) |can (i|you) )", "", subject).strip()
-    topic = subject.capitalize() if subject else clean
+if api_key:
+    st.markdown('<span class="status-badge status-live">🟢 LIVE INTERNET ENGINE ACTIVE (Gemini 2.5)</span>', unsafe_allow_html=True)
+    client = genai.Client(api_key=api_key)
+else:
+    st.markdown('<span class="status-badge status-demo">🟡 SIMULATOR MODE (Add GEMINI_API_KEY in Streamlit Secrets to enable live web queries)</span>', unsafe_allow_html=True)
+    client = None
 
-    # 1. Monetization & $10k Packages
-    if persona == "Creative Entrepreneur" or any(k in p for k in ["10k", "money", "price", "package", "sell"]):
-        return (
-            "💼 **[The Brown Girls Studio • Business Strategy]**\n\n"
-            f"**Monetization Roadmap for \"{clean}\":**\n\n"
-            "• **Step 1 (Value Over Hours):** Package high-touch deliverables into fixed monthly retainers. Stop trading hours for dollars.\n"
-            "• **Step 2 (Unit Economics):** Reverse-engineer your $10k milestone: four $2,500 clients or five $2,000 active retainers.\n"
-            "• **Step 3 (The Soft Launch):** Pre-sell to 3 pilot clients using personalized discovery calls before building complex landing pages!"
-        )
+# System Persona Rules
+STUDIO_SYSTEM_INSTRUCTION = """
+You are the Executive Growth AI Consultant for "The Brown Girls Creative Studio".
+Your voice is empowering, strategic, authoritative, concise, and deeply practical.
+You specialize in helping women and minority business owners scale through data-driven systems, 
+high-ticket retainers ($10k/month roadmap), organic video hooks, and no-code workflow automations.
 
-    # 2. Content & Brand Strategy
-    if persona == "Content & Brand Strategy" or any(k in p for k in ["video", "post", "hook", "content", "tiktok", "views"]):
-        return (
-            "🎬 **[The Brown Girls Studio • Content Lab]**\n\n"
-            f"**Growth Strategy for \"{clean}\":**\n\n"
-            "• **Step 1 (The Visual Hook):** Stop the scroll in the first 1.5 seconds by showcasing the end transformation or challenging an industry myth.\n"
-            "• **Step 2 (High-Utility Breakdown):** Deliver 1 actionable SOP, template, or insight rather than vague tips.\n"
-            "• **Step 3 (Conversion Call to Action):** Ask viewers to comment a specific keyword (e.g., 'SYSTEMS') to trigger an automated direct message!"
-        )
+Formatting standards:
+1. Always structure advice into 3 concrete, high-impact action steps with bold subheads.
+2. End with a 1-sentence strategic takeaway or revenue KPI to track.
+3. Be specific and tailored directly to the exact question asked—avoid generic motivational filler.
+"""
 
-    # 3. Operations & Workflow Automation
-    if persona == "Operations & Automation" or any(k in p for k in ["automate", "system", "workflow", "crm", "scale"]):
-        return (
-            "⚙️ **[The Brown Girls Studio • Systems & Automation]**\n\n"
-            f"**Operational Blueprint for \"{clean}\":**\n\n"
-            "• **Step 1 (Audit Client Journey):** Map every touchpoint from intake form submission to onboarding and invoice generation.\n"
-            "• **Step 2 (No-Code Bridges):** Connect your web forms directly to your CRM and project management board via Zapier or Make.\n"
-            "• **Step 3 (Automated Delivery):** Instantly trigger welcome kits, calendar links, and agreements the second payment processes!"
-        )
-
-    # 4. Brand Identity & Design
-    if persona == "Brand Identity & Design" or any(k in p for k in ["brand", "design", "logo", "aesthetic", "premium"]):
-        return (
-            "✨ **[The Brown Girls Studio • Brand Aesthetics]**\n\n"
-            f"**Positioning Guide for \"{clean}\":**\n\n"
-            "• **Step 1 (Warm Architectural Palette):** Anchor your brand in deep rich tones, warm neutrals, and ochre gold accents for an editorial look.\n"
-            "• **Step 2 (Editorial Font Pairing):** Pair a classic serif header with a modern sans-serif body for immediate visual authority.\n"
-            "• **Step 3 (Metric-Driven Proof):** Feature real case-study metrics, client dashboards, and workflow screenshots!"
-        )
-
-    # 5. Client Acquisition & Contracts
-    if persona == "Client Acquisition" or any(k in p for k in ["client", "pitch", "contract", "lead"]):
-        return (
-            "📈 **[The Brown Girls Studio • Client Acquisition]**\n\n"
-            f"**Pipeline Strategy for \"{clean}\":**\n\n"
-            "• **Step 1 (Warm Pipeline Outreach):** Reach out to past partners and network contacts with your new service offerings and case studies.\n"
-            "• **Step 2 (Value-First Video Audits):** Send 10 targeted 2-minute Loom teardowns identifying 2 immediate operational bottlenecks.\n"
-            "• **Step 3 (24-Hour Proposals):** Present concise, 3-tiered proposals within 24 hours of every discovery session!"
-        )
-
-    # Fallback Advisory
-    return (
-        f"🤎 **[The Brown Girls Studio • Executive Advisory]**\n\n"
-        f"**Strategic Focus for \"{clean}\":**\n\n"
-        f"• **Identify the Highest-Leverage Task:** Zero in on the single action that moves the needle on {topic.lower()} this week.\n"
-        "• **Sprint Execution:** Execute in two 45-minute distraction-free work blocks.\n"
-        "• **Weekly Review:** Track results, refine your client messaging, and eliminate friction points every Friday!"
-    )
-
-# 6. Interactive Studio AI Assistant Panel
+# 6. Interactive Query Interface
 st.markdown('<div class="section-eyebrow">— INTERACTIVE AI STRATEGY ENGINE</div>', unsafe_allow_html=True)
 
 col1, col2 = st.columns([1, 2])
@@ -284,23 +250,44 @@ with col2:
     user_input = st.text_input("Ask a Growth or Systems Question:", placeholder=placeholder_map[selected_persona])
     generate_btn = st.button("Generate Strategic Blueprint ✨")
 
-# 7. Output Streaming
+# 7. Live Generation with Real-Time Streaming
 if generate_btn:
     if not user_input.strip():
         st.warning("⚠️ Please enter a strategic question or goal above.")
     else:
-        with st.status("Analyzing Strategic Blueprint...", expanded=False):
-            st.write(f'🔍 Query: "{user_input}"')
-            time.sleep(0.3)
-            st.write("Cross-referencing The Brown Girls Studio growth systems...")
-            time.sleep(0.3)
-
-        response = search_knowledge_base(user_input, selected_persona)
-
+        st.markdown(f"### Strategic Output: *{selected_persona}*")
         message_placeholder = st.empty()
-        full_text = ""
-        for char in response:
-            full_text += char
-            message_placeholder.markdown(full_text + "▌")
-            time.sleep(0.007)
-        message_placeholder.markdown(full_text)
+
+        if client:
+            try:
+                # Live Gemini API call with streaming responses
+                prompt = f"Advisory Lens: {selected_persona}\nClient Question: {user_input}"
+                response_stream = client.models.generate_content_stream(
+                    model="gemini-2.5-flash",
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=STUDIO_SYSTEM_INSTRUCTION,
+                        temperature=0.7,
+                    )
+                )
+
+                full_response = ""
+                for chunk in response_stream:
+                    if chunk.text:
+                        full_response += chunk.text
+                        message_placeholder.markdown(full_response + "▌")
+                message_placeholder.markdown(full_response)
+
+            except Exception as e:
+                st.error(f"API Error: {e}")
+        else:
+            # Fallback simulator if no API key is present
+            simulated = (
+                f"🤎 **[The Brown Girls Studio • {selected_persona}]**\n\n"
+                f"**Strategic Blueprint for \"{user_input}\":**\n\n"
+                "• **Step 1 (Core Bottleneck):** Identify whether your current bottleneck is lead volume, offer pricing, or onboarding friction.\n"
+                "• **Step 2 (Execution Sprint):** Create one turnkey asset (a standardized retainer proposal or an automated intake form) to solve this bottleneck.\n"
+                "• **Step 3 (Metric Validation):** Track conversion rates across 5 prospects before changing your core messaging.\n\n"
+                "*Add your GEMINI_API_KEY into Streamlit Secrets to enable infinite, unique real-time answers.*"
+            )
+            message_placeholder.markdown(simulated)
