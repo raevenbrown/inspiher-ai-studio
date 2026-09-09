@@ -247,7 +247,7 @@ if generate_btn:
     if client:
         try:
             stream = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
+                model="llama-3.3-70b-versatile",
                 messages=[
                     {"role": "system", "content": STUDIO_SYSTEM_INSTRUCTION},
                     {"role": "user", "content": f"Advisory Lens: {selected_persona}\nGoal: {query}"}
