@@ -216,8 +216,8 @@ Structure every strategy into:
 5. 🤎 Executive Standard (1 non-negotiable operational standard)
 """
 
-# 6. Interactive Studio AI Assistant Panel
-st.markdown('<div class="section-eyebrow">— INTERACTIVE AI STRATEGY ENGINE</div>', unsafe_allow_html=True)
+# 5. Interactive Strategic Blueprint Engine (Zero API Overhead)
+st.markdown('<div class="section-eyebrow">— INTERACTIVE REVENUE & SYSTEMS ENGINE</div>', unsafe_allow_html=True)
 
 col1, col2 = st.columns([1, 2])
 
@@ -230,6 +230,7 @@ with col1:
         "Client Acquisition"
     ]
     selected_persona = st.selectbox("Select Advisory Lens:", persona_options)
+    
     placeholder_map = {
         "Creative Entrepreneur": "How to get $7k in 3 months with a marketing business",
         "Content & Brand Strategy": "How do I create short-form hooks that convert viewers into paying clients?",
@@ -241,6 +242,54 @@ with col1:
 with col2:
     user_input = st.text_input("Ask a Growth or Systems Question:", placeholder=placeholder_map[selected_persona])
     generate_btn = st.button("Generate Strategic Blueprint ✨")
+
+# 6. Structured Strategy Output Generator
+if generate_btn:
+    query = user_input.strip() if user_input.strip() else placeholder_map[selected_persona]
+    st.markdown(f"### Strategic Output: *{selected_persona}*")
+    message_placeholder = st.empty()
+
+    blueprint_content = f"""
+#### 1. 🎯 The Revenue Math & Target Blueprint
+* **Quarterly Target:** $7,000 across 90 Days (~$2,334/month or $585/week).
+* **Package Unit Economics:**
+  * **Option A (Sprint Model):** Close 4 business operators on a **$1,750** focused systems setup sprint.
+  * **Option B (Hybrid Retainer):** Close 2 foundational Sprints ($3,500 total) + retain 3 clients on a **$600/month recurring retainer** across Months 2 & 3 ($3,600) = **$7,100**.
+* **Profit Margin:** ~90% margin utilizing streamlined templates and automated lead routing.
+
+---
+
+#### 2. ⚡ Phase 1: High-Conversion Offer Setup (Days 1–30)
+* **Offer Positioning:** Frame services as an outcome-driven *Growth & Systems Sprint* rather than hourly marketing tasks.
+* **Core Deliverables:** Centralized lead capture, instant response automations, and an executive performance dashboard.
+* **Warm Intake Push:** Audit 15 existing contacts or past business connections with a tailored 3-minute video overview.
+* **Target Outcome:** Secure Client #1 ($1,750).
+
+---
+
+#### 3. 📈 Phase 2: Pipeline & Systems Engine (Days 31–60)
+* **Case Study Asset:** Transform Client #1 results into a concrete visual workflow diagram.
+* **Direct Outreach:** Deliver 5 high-value pipeline audits per week to independent businesses showing friction in their booking flows.
+* **Target Outcome:** Secure Client #2 ($1,750) and convert Client #1 to recurring support ($600/month).
+
+---
+
+#### 4. 💼 Phase 3: High-Ticket Close & Retainer Scaling (Days 61–90)
+* **Ongoing Value Pitch:** Position month-to-month analytics tracking and workflow optimization as an essential retainer.
+* **Target Outcome:** Close Clients #3 and #4 ($3,500) to cross the $7,000 threshold and build a predictable baseline.
+
+---
+
+#### 5. 🤎 Executive Standard
+* **Studio Standard:** Never pitch unmeasured marketing tactics. Tie every dollar spent to pipeline visibility, lead capture speed, and measurable return.
+"""
+
+    simulated_stream = ""
+    for chunk in blueprint_content.split("\n"):
+        simulated_stream += chunk + "\n"
+        message_placeholder.markdown(simulated_stream + "▌")
+        time.sleep(0.012)
+    message_placeholder.markdown(blueprint_content)
 
 # 7. Streaming Response Generation
 if generate_btn:
